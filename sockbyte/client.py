@@ -1,6 +1,6 @@
 import socket
 import asyncio
-from .connection import ChunkedConnection
+from .connections import ChunkedConnection
 
 
 async def client():
@@ -8,9 +8,10 @@ async def client():
     reader, writer = await asyncio.open_connection(socket.gethostname(), 933)
     conn = ChunkedConnection(reader, writer)
     print("Receiving")
-    message = await conn.receive()
-    print(message)
-    message = await conn.receive()
-    print(message)
-    await conn.close()
+    for i in range(2):
+        while True:
+            if message := await conn.receive():
+                print(repr(message))
+                break
+
 

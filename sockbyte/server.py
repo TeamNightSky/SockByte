@@ -1,12 +1,12 @@
 import socket
 import asyncio
-from .connection import ChunkedConnection
+from .connections import ChunkedConnection
 
 
 async def handle_client(reader, writer):
     print("Handling connection")
     conn = ChunkedConnection(reader, writer)
-    await conn.send(b"Hello!")
+    await conn.send(b"Hello!" * 1024)
     await conn.send(b"[CLOSE]")
 
 
