@@ -3,9 +3,9 @@ import time
 import hashlib
 
 
-def packet_snowflake(packet) -> str:
+def packet_snowflake(packet) -> bytes:
     data = packet.data + \
         str(time.time()).encode() + \
         str(random.randint(0, 999999)).encode()
-    return hashlib.sha256(data).hexdigest()
+    return hashlib.sha1(data).hexdigest().encode()
 

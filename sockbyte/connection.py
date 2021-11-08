@@ -1,23 +1,28 @@
 import socket
+from asyncio import StreamReader, StreamWriter
 from sockbyte.exceptions import (
     SocketError,
     ContentTypeError
 )
-from sockbyte.message import RawMessage
+from sockbyte.message import (
+    RawMessage,
+    Chunk,
+    ChunkReception
+)
 
 
 class RawConnection:
     HEADER_LENGTH = 32
 
-    def __init__(self, conn: socket.socket) -> None:
-        self.conn = conn
+    def __init__(self, reader: StreamReader, writer: StreamWriter) -> None:
+        self.reader = reader
+        self.writer = writer
 
-    async def send(self, data: bytes) -> None:
+    async def rawsend(self, data: bytes) -> None:
         header = self.header(data)
-        if self.conn.send(header) == 0:
-            raise SocketError("Connection broken while sending buffer")
-        if self.conn.send(data) == 0:
-            raise SocketError("Connection broken while sending data")
+        self.writer.write(header)
+        self.writer.write(data)
+        await self.writer.drain()
 
     def header(self, data: bytes):
         content_length = str(len(data)).encode()
@@ -29,27 +34,36 @@ class RawConnection:
         except ValueError:
             raise ContentTypeError("content length header was non-integer")
 
-    async def receive(self) -> bytes:
-        content_length = self.conn.recv(self.HEADER_LENGTH)
+    async def rawreceive(self) -> bytes:
+        content_length = await self.reader.read(self.HEADER_LENGTH)
         if content_length == b"":
             raise SocketError("Connection broken while receiving buffer")
         content_length = self.decode_header(content_length)
-
-        data = self.conn.recv(content_length)
+        data = await self.reader.read(content_length)
         if len(data) != content_length:
             raise SocketError("Connection broken while receiving data")
         return data
 
     async def close(self) -> None:
-        self.conn.close()
+        self.writer.close()
 
 
 class ChunkedConnection(RawConnection):
+    chunkreception: ChunkReception
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.chunkreception = ChunkReception()
+
     async def send(self, data: bytes, *args, **kwargs):
         packet = RawMessage(data, *args, **kwargs)
-        for chunk, i in enumerate(packet.chunks()):
-            await super().send(chunk.bytes())
+        for i, chunk in enumerate(packet.chunks()):
+            await self.rawsend(chunk.bytes())
 
-    def receive(self):
-        pass
+    async def receive(self):
+        data = await self.rawreceive()
+        chunk = Chunk.from_bytes(data)
+        self.chunkreception.feed(chunk)
+        return self.chunkreception.fetch()
+
 

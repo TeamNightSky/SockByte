@@ -1,15 +1,24 @@
 import socket
-from .connection import RawConnection
+import asyncio
+from .connection import ChunkedConnection
+
+
+async def handle_client(reader, writer):
+    print("Handling connection")
+    conn = ChunkedConnection(reader, writer)
+    await conn.send(b"Hello!")
+    await conn.send(b"[CLOSE]")
 
 
 async def server():
-    sock = socket.socket()#socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((socket.gethostname(), 933))
-    sock.listen(2)
-    while True:
-        print("Accepting")
-        conn, dynamic_port = sock.accept()
-        conn = RawConnection(conn)
-        await conn.send(b"Hello!")
-        await conn.close()
-    sock.close()
+    print("Starting server")
+    
+    server = await asyncio.start_server(
+        handle_client,
+        socket.gethostname(),
+        933
+    )
+    print("Running server")
+    async with server:
+        await server.serve_forever()
+
