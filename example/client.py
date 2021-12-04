@@ -1,6 +1,6 @@
 import socket
 import asyncio
-from .connections import ChunkedConnection
+from sockbyte import ChunkedConnection
 
 
 async def client():

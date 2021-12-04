@@ -1,5 +1,5 @@
 import asyncio
-from sockbyte import client, server
+import client, server
 
 
 loop = asyncio.get_event_loop()
@@ -17,4 +17,6 @@ if __name__ == '__main__':
             pass
         atexit.register(closelock)
         loop.run_until_complete(server.server())
-    
+
+
+

@@ -1,3 +1,4 @@
-from . import exceptions
-from . import connections
 from .connection import RawConnection
+from .connections import (
+    ChunkedConnection
+)

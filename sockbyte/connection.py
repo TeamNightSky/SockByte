@@ -1,6 +1,6 @@
 import time
 from asyncio import StreamReader, StreamWriter
-from sockbyte.exceptions import (
+from .exceptions import (
     SocketError,
     ContentTypeError
 )
