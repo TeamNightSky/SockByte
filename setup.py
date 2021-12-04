@@ -5,5 +5,5 @@ setup(
     name='sockbyte',
     author='TeamNightSky',
     license='LGPL',
-    packages=find_packages(include=["sockbyte"]),
+    packages=find_packages(include=["sockbyte", "sockbyte.*"]),
 )
